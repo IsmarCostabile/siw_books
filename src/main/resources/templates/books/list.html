@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www            <!-- Books Grid -->
+            <div th:if="${books != null and !books.isEmpty()}">hymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title th:text="'Books - SiW Books'">Books - SiW Books</title>
+</head>
+<body>
+    <main>
+        <!-- Page Header -->
+        <div class="bg-white shadow">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                        <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                            Books Library
+                        </h1>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Discover and explore our collection of books
+                        </p>
+                    </div>
+                    
+                    <!-- Search Bar -->
+                    <div class="flex-1 max-w-md">
+                        <form th:action="@{/books/search}" method="get">
+                            <div class="relative">
+                                <input type="text" 
+                                       name="title" 
+                                       th:value="${searchTitle}"
+                                       placeholder="Search books by title..." 
+                                       class="w-full pl-10 pr-16 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="flex">
+                        <a href="/books/new" th:if="${loggedInUser != null and loggedInUser.admin}" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition duration-150">
+                            Add New Book
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Books List -->
+            <div th:if="${books != null and not #lists.isEmpty(books)}">
+                <div class="space-y-4">
+                    <div th:each="book : ${books}" class="bg-white rounded-lg shadow-md book-card-hover overflow-hidden">
+                        <div class="flex">
+                            <!-- Book Image -->
+                            <div class="w-32 h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center relative flex-shrink-0">
+                                <!-- Image will be loaded by the ImageController, which handles missing images -->
+                                <img th:src="@{'/images/books/' + ${book.id} + '/0'}" 
+                                     th:alt="${book.title}" 
+                                     class="h-full w-full object-cover">
+                            </div>
+                            
+                            <!-- Book Info -->
+                            <div class="flex-1 p-6">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <h3 class="text-xl font-semibold text-gray-800 mb-2" th:text="${book.title}">Book Title</h3>
+                                        <p class="text-sm text-gray-600 mb-2" th:if="${book.publicationYear != null}">
+                                            Published: <span th:text="${book.publicationYear}">2023</span>
+                                        </p>
+                                        
+                                        <!-- Authors -->
+                                        <div th:if="${book.authors != null and !book.authors.isEmpty()}" class="mb-4">
+                                            <p class="text-sm text-gray-600">
+                                                By: 
+                                                <span th:each="author, iterStat : ${book.authors}">
+                                                    <span th:text="${author.name + ' ' + author.surname}">Author Name</span>
+                                                    <span th:if="${!iterStat.last}">, </span>
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="flex space-x-2 ml-4">
+                                        <a th:href="@{/books/{id}(id=${book.id})}" 
+                                           class="bg-blue-600 text-white py-2 px-4 rounded text-sm hover:bg-blue-700 transition duration-150">
+                                            View Details
+                                        </a>
+                                        <a th:if="${loggedInUser != null and loggedInUser.admin}" th:href="@{/books/{id}/edit(id=${book.id})}" 
+                                           class="bg-gray-200 text-gray-700 py-2 px-4 rounded text-sm hover:bg-gray-300 transition duration-150">
+                                            Edit
+                                        </a>
+                                        <a th:if="${loggedInUser != null and loggedInUser.admin}" th:href="@{/books/{id}/delete(id=${book.id})}" 
+                                           onclick="return confirm('Are you sure you want to delete this book?')"
+                                           class="bg-red-600 text-white py-2 px-4 rounded text-sm hover:bg-red-700 transition duration-150">
+                                            Delete
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div th:if="${books == null or books.isEmpty()}" class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No books found</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                    <span th:if="${searchTitle != null and !#strings.isEmpty(searchTitle)}">
+                        No books match your search criteria. Try a different search term.
+                    </span>
+                    <span th:unless="${searchTitle != null and !#strings.isEmpty(searchTitle)}">
+                        Get started by adding a new book to the library.
+                    </span>
+                </p>
+                <div class="mt-6">
+                    <a href="/books/new" th:if="${loggedInUser != null and loggedInUser.admin}" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition duration-150">
+                        Add New Book
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

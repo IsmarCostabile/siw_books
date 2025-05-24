@@ -1,0 +1,141 @@
+package com.siw.it.siw_books.ViewControllers;
+
+import com.siw.it.siw_books.Model.Book;
+import com.siw.it.siw_books.Model.User;
+import com.siw.it.siw_books.Service.BookService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@Controller
+@RequestMapping("/books")
+public class BookViewController {
+
+    @Autowired
+    private BookService bookService;
+
+    @GetMapping
+    public String getAllBooks(Model model, HttpSession session) {
+        List<Book> books = bookService.findAll();
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+        model.addAttribute("books", books);
+        model.addAttribute("loggedInUser", loggedInUser);
+        return "books/list";
+    }
+
+    @GetMapping("/{id}")
+    public String getBookDetails(@PathVariable Long id, Model model, HttpSession session) {
+        Optional<Book> book = bookService.findByIdWithAuthors(id);
+        if (book.isPresent()) {
+            User loggedInUser = (User) session.getAttribute("loggedInUser");
+            model.addAttribute("book", book.get());
+            model.addAttribute("loggedInUser", loggedInUser);
+            return "books/detail";
+        }
+        return "redirect:/books";
+    }
+
+    @GetMapping("/new")
+    public String showCreateForm(Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+        if (loggedInUser == null || !loggedInUser.isAdmin()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Access denied. Admin privileges required.");
+            return "redirect:/books";
+        }
+        
+        model.addAttribute("book", new Book());
+        return "books/form";
+    }
+
+    @GetMapping("/{id}/edit")
+    public String showEditForm(@PathVariable Long id, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+        if (loggedInUser == null || !loggedInUser.isAdmin()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Access denied. Admin privileges required.");
+            return "redirect:/books";
+        }
+        
+        Optional<Book> book = bookService.findByIdWithAuthors(id);
+        if (book.isPresent()) {
+            model.addAttribute("book", book.get());
+            return "books/form";
+        }
+        return "redirect:/books";
+    }
+
+    @PostMapping("/save")
+    public String saveBook(@ModelAttribute Book book, 
+                         @RequestParam("imageFiles") MultipartFile[] imageFiles,
+                         HttpSession session, 
+                         RedirectAttributes redirectAttributes) {
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+        if (loggedInUser == null || !loggedInUser.isAdmin()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Access denied. Admin privileges required.");
+            return "redirect:/books";
+        }
+        
+        try {
+            // Convert uploaded files to byte arrays
+            List<byte[]> imageDataList = new ArrayList<>();
+            for (MultipartFile file : imageFiles) {
+                if (!file.isEmpty()) {
+                    imageDataList.add(file.getBytes());
+                }
+            }
+            
+            // If new images are uploaded, replace existing ones
+            if (!imageDataList.isEmpty()) {
+                book.setImages(imageDataList);
+            }
+            
+            bookService.save(book);
+            redirectAttributes.addFlashAttribute("successMessage", "Book saved successfully!");
+            return "redirect:/books";
+        } catch (IOException e) {
+            // Handle file upload error
+            redirectAttributes.addFlashAttribute("errorMessage", "Error uploading images. Please try again.");
+            return "redirect:/books/new?error=upload";
+        }
+    }
+
+    @GetMapping("/{id}/delete")
+    public String deleteBook(@PathVariable Long id, HttpSession session, RedirectAttributes redirectAttributes) {
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+        if (loggedInUser == null || !loggedInUser.isAdmin()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Access denied. Admin privileges required.");
+            return "redirect:/books";
+        }
+        
+        try {
+            bookService.deleteById(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Book deleted successfully!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error deleting book. Please try again.");
+        }
+        return "redirect:/books";
+    }
+
+    @GetMapping("/search")
+    public String searchBooks(@RequestParam(required = false) String title, Model model, HttpSession session) {
+        List<Book> books;
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+        if (title != null && !title.trim().isEmpty()) {
+            books = bookService.findByTitleContaining(title);
+            model.addAttribute("searchTitle", title);
+        } else {
+            books = bookService.findAll();
+        }
+        model.addAttribute("books", books);
+        model.addAttribute("loggedInUser", loggedInUser);
+        return "books/list";
+    }
+}
