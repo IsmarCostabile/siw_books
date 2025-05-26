@@ -20,7 +20,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 min-h-screen flex flex-col">
     <!-- Navigation Bar -->
     <nav class="bg-white shadow-lg sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -98,7 +98,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main th:insert="${content}">
+    <main th:insert="${content}" class="flex-grow">
         <!-- This will be replaced by specific page content -->
     </main>
 
