@@ -7,6 +7,7 @@ import com.siw.it.siw_books.Service.AuthorService;
 import com.siw.it.siw_books.Service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,9 +15,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
-
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/authors")
@@ -38,6 +40,7 @@ public class AuthorViewController {
     }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public String getAuthorDetails(@PathVariable Long id, Model model, HttpSession session) {
         Optional<Author> author = authorService.findById(id);
         if (author.isPresent()) {
@@ -136,68 +139,64 @@ public class AuthorViewController {
         return "authors/list";
     }
 
-    @GetMapping("/{id}/associate-books")
-    public String showAssociateBooksPage(@PathVariable Long id, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+    @GetMapping("/{id}/manage-books")
+    @Transactional(readOnly = true)
+    public String manageBooksForAuthor(@PathVariable Long id, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
         User loggedInUser = (User) session.getAttribute("loggedInUser");
         if (loggedInUser == null || !loggedInUser.isAdmin()) {
             redirectAttributes.addFlashAttribute("errorMessage", "Access denied. Admin privileges required.");
-            return "redirect:/authors/" + id;
-        }
-        
-        Optional<Author> author = authorService.findById(id);
-        if (!author.isPresent()) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Author not found.");
             return "redirect:/authors";
         }
         
-        List<Book> allBooks = bookService.findAll();
-        model.addAttribute("author", author.get());
-        model.addAttribute("books", allBooks);
-        model.addAttribute("loggedInUser", loggedInUser);
-        return "authors/associate-books";
+        Optional<Author> authorOpt = authorService.findByIdWithBooks(id);
+        if (authorOpt.isPresent()) {
+            Author author = authorOpt.get();
+            List<Book> allBooks = bookService.findAll(); // Get all books
+            List<Long> authorBookIds = author.getBooks().stream()
+                                           .map(Book::getId)
+                                           .collect(Collectors.toList());
+            model.addAttribute("author", author);
+            model.addAttribute("allBooks", allBooks); // Add all books to the model
+            model.addAttribute("authorBookIds", authorBookIds); // Add IDs of books by this author
+            return "authors/manage-books";
+        }
+        return "redirect:/authors";
     }
 
-    @PostMapping("/{id}/associate-books")
-    public String associateBooks(@PathVariable Long id, 
-                                @RequestParam(value = "selectedBooks", required = false) List<Long> selectedBookIds,
+    @PostMapping("/{id}/manage-books")
+    public String saveAuthorBooks(@PathVariable Long id, 
+                                @RequestParam(value = "selectedBookIds", required = false) List<Long> selectedBookIds,
                                 HttpSession session, 
                                 RedirectAttributes redirectAttributes) {
         User loggedInUser = (User) session.getAttribute("loggedInUser");
         if (loggedInUser == null || !loggedInUser.isAdmin()) {
             redirectAttributes.addFlashAttribute("errorMessage", "Access denied. Admin privileges required.");
-            return "redirect:/authors/" + id;
-        }
-        
-        Optional<Author> authorOpt = authorService.findById(id);
-        if (!authorOpt.isPresent()) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Author not found.");
             return "redirect:/authors";
         }
-        
-        Author author = authorOpt.get();
-        
-        if (selectedBookIds != null && !selectedBookIds.isEmpty()) {
-            try {
-                // Get the selected books and associate them with the author
-                for (Long bookId : selectedBookIds) {
-                    Optional<Book> bookOpt = bookService.findByIdWithAuthors(bookId);
-                    if (bookOpt.isPresent()) {
-                        Book book = bookOpt.get();
-                        // Add author to book if not already associated
-                        if (!book.getAuthors().contains(author)) {
-                            book.getAuthors().add(author);
-                            bookService.save(book);
-                        }
-                    }
-                }
-                redirectAttributes.addFlashAttribute("successMessage", "Books associated successfully!");
-            } catch (Exception e) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Error associating books. Please try again.");
+
+        try {
+            Optional<Author> authorOpt = authorService.findByIdWithBooks(id);
+            if (!authorOpt.isPresent()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Author not found.");
+                return "redirect:/authors";
             }
-        } else {
-            redirectAttributes.addFlashAttribute("infoMessage", "No books were selected.");
+
+            // If no books selected, pass empty list
+            if (selectedBookIds == null) {
+                selectedBookIds = new ArrayList<>();
+            }
+
+            // Use the AuthorService to set books for the author
+            Author updatedAuthor = authorService.setBooks(id, selectedBookIds);
+            if (updatedAuthor != null) {
+                redirectAttributes.addFlashAttribute("successMessage", "Books updated successfully!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Failed to update books.");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error updating books: " + e.getMessage());
         }
-        
+
         return "redirect:/authors/" + id;
     }
 }

@@ -2,6 +2,7 @@ package com.siw.it.siw_books.Model;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -27,18 +28,24 @@ public class Author {
     @Column
     private String nationality;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Column(name = "photo_data")
     @Lob
     private byte[] photo;
 
-    @ManyToMany(mappedBy = "authors")
+    @ManyToMany(mappedBy = "authors", fetch = FetchType.LAZY)
     private List<Book> books;
 
     // Default constructor
-    public Author() {}
+    public Author() {
+        this.books = new ArrayList<>();
+    }
 
     // Constructor
     public Author(String name, String surname, LocalDate birthDate, String nationality) {
+        this();
         this.name = name;
         this.surname = surname;
         this.birthDate = birthDate;
@@ -94,6 +101,14 @@ public class Author {
         this.nationality = nationality;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public byte[] getPhoto() {
         return photo;
     }
@@ -108,5 +123,22 @@ public class Author {
 
     public void setBooks(List<Book> books) {
         this.books = books;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        Author author = (Author) obj;
+        return id != null && id.equals(author.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
     }
 }

@@ -12,9 +12,17 @@
                     <div class="flex-1 min-w-0">
                         <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
                             Authors
+                            <span th:if="${authors != null and not #lists.isEmpty(authors)}" class="text-lg font-normal text-gray-500">
+                                (<span th:text="${#lists.size(authors)}">0</span>)
+                            </span>
                         </h1>
                         <p class="mt-1 text-sm text-gray-500">
-                            Discover talented authors and their amazing works
+                            <span th:if="${searchName != null and not #strings.isEmpty(searchName)}">
+                                Search results for "<span th:text="${searchName}">search term</span>"
+                            </span>
+                            <span th:unless="${searchName != null and not #strings.isEmpty(searchName)}">
+                                Discover talented authors and their amazing works
+                            </span>
                         </p>
                     </div>
                     
@@ -49,9 +57,9 @@
             <!-- Authors List -->
             <div th:if="${authors != null and not #lists.isEmpty(authors)}" class="space-y-4">
                 <div th:each="author : ${authors}" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
-                    <div class="flex">
+                    <div class="flex flex-col sm:flex-row">
                         <!-- Author Photo -->
-                        <div class="w-32 h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center relative flex-shrink-0">
+                        <div class="w-full sm:w-32 h-49 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center relative flex-shrink-0">
                             <!-- Image will be loaded by the ImageController, which handles missing images -->
                             <img th:src="@{'/images/authors/' + ${author.id}}" 
                                  th:alt="${author.name + ' ' + author.surname}" 
@@ -65,7 +73,7 @@
                                     <h3 class="text-xl font-semibold text-gray-900 mb-2" th:text="${author.name + ' ' + author.surname}">Author Name</h3>
                                     <p class="text-sm text-gray-600 mb-3" th:text="${author.nationality}">Nationality</p>
                                     
-                                    <div class="space-y-1 text-sm text-gray-600 mb-4">
+                                    <div class="space-y-1 text-sm text-gray-600 mb-3">
                                         <p th:if="${author.birthDate}">
                                             <span class="font-medium">Born:</span> 
                                             <span th:text="${#temporals.format(author.birthDate, 'MMM dd, yyyy')}">Birth Date</span>
@@ -74,6 +82,24 @@
                                             <span class="font-medium">Died:</span> 
                                             <span th:text="${#temporals.format(author.deathDate, 'MMM dd, yyyy')}">Death Date</span>
                                         </p>
+                                    </div>
+                                    
+                                    <!-- Biography Preview -->
+                                    <div th:if="${author.description != null and not #strings.isEmpty(author.description)}" class="mb-3">
+                                        <p class="text-sm text-gray-700 leading-relaxed" th:text="${#strings.abbreviate(author.description, 150)}">Biography preview...</p>
+                                    </div>
+                                    
+                                    <!-- Books Count -->
+                                    <div class="flex items-center space-x-4 text-xs text-gray-500 mb-4">
+                                        <span th:if="${author.books != null and not #lists.isEmpty(author.books)}">
+                                            <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                            </svg>
+                                            <span th:text="${#lists.size(author.books)} + ' book' + (${#lists.size(author.books)} > 1 ? 's' : '')">Books count</span>
+                                        </span>
+                                        <span th:if="${author.books == null or #lists.isEmpty(author.books)}" class="text-gray-400">
+                                            No books yet
+                                        </span>
                                     </div>
                                 </div>
                                 

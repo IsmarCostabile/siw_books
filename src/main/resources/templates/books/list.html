@@ -13,9 +13,17 @@
                     <div class="flex-1 min-w-0">
                         <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
                             Books Library
+                            <span th:if="${books != null and not #lists.isEmpty(books)}" class="text-lg font-normal text-gray-500">
+                                (<span th:text="${#lists.size(books)}">0</span>)
+                            </span>
                         </h1>
                         <p class="mt-1 text-sm text-gray-500">
-                            Discover and explore our collection of books
+                            <span th:if="${searchTitle != null and not #strings.isEmpty(searchTitle)}">
+                                Search results for "<span th:text="${searchTitle}">search term</span>"
+                            </span>
+                            <span th:unless="${searchTitle != null and not #strings.isEmpty(searchTitle)}">
+                                Discover and explore our collection of books
+                            </span>
                         </p>
                     </div>
                     
@@ -50,10 +58,10 @@
             <!-- Books List -->
             <div th:if="${books != null and not #lists.isEmpty(books)}">
                 <div class="space-y-4">
-                    <div th:each="book : ${books}" class="bg-white rounded-lg shadow-md book-card-hover overflow-hidden">
-                        <div class="flex">
+                    <div th:each="book : ${books}" class="bg-white rounded-lg shadow-md book-card-hover overflow-hidden hover:shadow-lg transition duration-300">
+                        <div class="flex flex-col sm:flex-row">
                             <!-- Book Image -->
-                            <div class="w-32 h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center relative flex-shrink-0">
+                            <div class="w-full sm:w-32 h-49 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center relative flex-shrink-0">
                                 <!-- Image will be loaded by the ImageController, which handles missing images -->
                                 <img th:src="@{'/images/books/' + ${book.id} + '/0'}" 
                                      th:alt="${book.title}" 
@@ -70,14 +78,36 @@
                                         </p>
                                         
                                         <!-- Authors -->
-                                        <div th:if="${book.authors != null and !book.authors.isEmpty()}" class="mb-4">
+                                        <div th:if="${book.authors != null and !book.authors.isEmpty()}" class="mb-3">
                                             <p class="text-sm text-gray-600">
                                                 By: 
                                                 <span th:each="author, iterStat : ${book.authors}">
-                                                    <span th:text="${author.name + ' ' + author.surname}">Author Name</span>
-                                                    <span th:if="${!iterStat.last}">, </span>
+                                                    <a th:href="@{/authors/{id}(id=${author.id})}" 
+                                                       class="text-blue-600 hover:text-blue-800 font-medium"
+                                                       th:text="${author.name + ' ' + author.surname}">Author Name</a><span th:if="${!iterStat.last}">, </span>
                                                 </span>
                                             </p>
+                                        </div>
+                                        
+                                        <!-- Synopsis Preview -->
+                                        <div th:if="${book.synopsis != null and not #strings.isEmpty(book.synopsis)}" class="mb-3">
+                                            <p class="text-sm text-gray-700 leading-relaxed" th:text="${#strings.abbreviate(book.synopsis, 200)}">Synopsis preview...</p>
+                                        </div>
+                                        
+                                        <!-- Book Stats -->
+                                        <div class="flex items-center space-x-4 text-xs text-gray-500">
+                                            <span th:if="${book.authors != null and not #lists.isEmpty(book.authors)}">
+                                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                                </svg>
+                                                <span th:text="${#lists.size(book.authors)} + ' author' + (${#lists.size(book.authors)} > 1 ? 's' : '')">Authors count</span>
+                                            </span>
+                                            <span th:if="${book.reviews != null and not #lists.isEmpty(book.reviews)}">
+                                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                                </svg>
+                                                <span th:text="${#lists.size(book.reviews)} + ' review' + (${#lists.size(book.reviews)} > 1 ? 's' : '')">Reviews count</span>
+                                            </span>
                                         </div>
                                     </div>
                                     

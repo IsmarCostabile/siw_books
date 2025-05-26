@@ -1,7 +1,9 @@
 package com.siw.it.siw_books.Controller;
 
 import com.siw.it.siw_books.Model.Book;
+import com.siw.it.siw_books.Model.Author;
 import com.siw.it.siw_books.Service.BookService;
+import com.siw.it.siw_books.Service.AuthorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,9 @@ public class BookController {
 
     @Autowired
     private BookService bookService;
+    
+    @Autowired
+    private AuthorService authorService;
 
     @GetMapping
     public ResponseEntity<List<Book>> getAllBooks() {
@@ -101,4 +106,103 @@ public class BookController {
         bookService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Add an author to a book
+     */
+    @PostMapping("/{bookId}/authors/{authorId}")
+    public ResponseEntity<Book> addAuthorToBook(@PathVariable Long bookId, @PathVariable Long authorId) {
+        if (!bookService.findById(bookId).isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        if (!authorService.findById(authorId).isPresent()) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        Book updatedBook = bookService.addAuthor(bookId, authorId);
+        if (updatedBook != null) {
+            return ResponseEntity.ok(updatedBook);
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build(); // Author already associated
+        }
+    }
+
+    /**
+     * Remove an author from a book
+     */
+    @DeleteMapping("/{bookId}/authors/{authorId}")
+    public ResponseEntity<Book> removeAuthorFromBook(@PathVariable Long bookId, @PathVariable Long authorId) {
+        if (!bookService.findById(bookId).isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Book updatedBook = bookService.removeAuthor(bookId, authorId);
+        if (updatedBook != null) {
+            return ResponseEntity.ok(updatedBook);
+        } else {
+            return ResponseEntity.notFound().build(); // Author not found in book
+        }
+    }
+
+    /**
+     * Set authors for a book (replaces existing authors)
+     */
+    @PutMapping("/{bookId}/authors")
+    public ResponseEntity<Book> setAuthorsForBook(@PathVariable Long bookId, @RequestBody List<Long> authorIds) {
+        if (!bookService.findById(bookId).isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        // Validate that all author IDs exist
+        for (Long authorId : authorIds) {
+            if (!authorService.findById(authorId).isPresent()) {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+        
+        Book updatedBook = bookService.setAuthors(bookId, authorIds);
+        if (updatedBook != null) {
+            return ResponseEntity.ok(updatedBook);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Add multiple authors to a book (adds to existing authors)
+     */
+    @PostMapping("/{bookId}/authors")
+    public ResponseEntity<Book> addAuthorsToBook(@PathVariable Long bookId, @RequestBody List<Long> authorIds) {
+        if (!bookService.findById(bookId).isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        // Validate that all author IDs exist
+        for (Long authorId : authorIds) {
+            if (!authorService.findById(authorId).isPresent()) {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+        
+        Book updatedBook = bookService.addAuthors(bookId, authorIds);
+        if (updatedBook != null) {
+            return ResponseEntity.ok(updatedBook);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Get all authors of a specific book
+     */
+    @GetMapping("/{bookId}/authors")
+    public ResponseEntity<List<Author>> getBookAuthors(@PathVariable Long bookId) {
+        Optional<Book> book = bookService.findByIdWithAuthors(bookId);
+        if (book.isPresent()) {
+            return ResponseEntity.ok(book.get().getAuthors());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 }

@@ -23,7 +23,7 @@ public interface AuthorRepository extends JpaRepository<Author, Long> {
     @Query("SELECT a FROM Author a WHERE a.deathDate IS NULL")
     List<Author> findLivingAuthors();
     
-    @Query("SELECT a FROM Author a JOIN FETCH a.books WHERE a.id = :id")
+    @Query("SELECT a FROM Author a LEFT JOIN FETCH a.books WHERE a.id = :id")
     Optional<Author> findByIdWithBooks(@Param("id") Long id);
     
     @Query("SELECT a FROM Author a WHERE LOWER(CONCAT(a.name, ' ', a.surname)) LIKE LOWER(CONCAT('%', :fullName, '%'))")

@@ -1,10 +1,13 @@
 package com.siw.it.siw_books.ViewControllers;
 
+import com.siw.it.siw_books.Model.Author;
 import com.siw.it.siw_books.Model.Book;
 import com.siw.it.siw_books.Model.User;
+import com.siw.it.siw_books.Service.AuthorService;
 import com.siw.it.siw_books.Service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,6 +18,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/books")
@@ -23,9 +27,13 @@ public class BookViewController {
     @Autowired
     private BookService bookService;
 
+    @Autowired
+    private AuthorService authorService;
+
     @GetMapping
+    @Transactional(readOnly = true)
     public String getAllBooks(Model model, HttpSession session) {
-        List<Book> books = bookService.findAll();
+        List<Book> books = bookService.findAllWithAuthors();
         User loggedInUser = (User) session.getAttribute("loggedInUser");
         model.addAttribute("books", books);
         model.addAttribute("loggedInUser", loggedInUser);
@@ -33,11 +41,16 @@ public class BookViewController {
     }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public String getBookDetails(@PathVariable Long id, Model model, HttpSession session) {
         Optional<Book> book = bookService.findByIdWithAuthors(id);
         if (book.isPresent()) {
             User loggedInUser = (User) session.getAttribute("loggedInUser");
+            boolean hasImages = bookService.hasImages(id);
+            long imageCount = bookService.countImages(id);
             model.addAttribute("book", book.get());
+            model.addAttribute("hasImages", hasImages);
+            model.addAttribute("imageCount", imageCount);
             model.addAttribute("loggedInUser", loggedInUser);
             return "books/detail";
         }
@@ -57,6 +70,7 @@ public class BookViewController {
     }
 
     @GetMapping("/{id}/edit")
+    @Transactional
     public String showEditForm(@PathVariable Long id, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
         User loggedInUser = (User) session.getAttribute("loggedInUser");
         if (loggedInUser == null || !loggedInUser.isAdmin()) {
@@ -64,9 +78,14 @@ public class BookViewController {
             return "redirect:/books";
         }
         
-        Optional<Book> book = bookService.findByIdWithAuthors(id);
-        if (book.isPresent()) {
-            model.addAttribute("book", book.get());
+        Optional<Book> bookOpt = bookService.findByIdWithAuthors(id);
+        if (bookOpt.isPresent()) {
+            Book book = bookOpt.get();
+            // Force initialization of images collection to avoid lazy loading issues in template
+            if (book.getImages() != null) {
+                book.getImages().size(); // This will trigger lazy loading within the transaction
+            }
+            model.addAttribute("book", book);
             return "books/form";
         }
         return "redirect:/books";
@@ -125,6 +144,7 @@ public class BookViewController {
     }
 
     @GetMapping("/search")
+    @Transactional(readOnly = true)
     public String searchBooks(@RequestParam(required = false) String title, Model model, HttpSession session) {
         List<Book> books;
         User loggedInUser = (User) session.getAttribute("loggedInUser");
@@ -132,10 +152,71 @@ public class BookViewController {
             books = bookService.findByTitleContaining(title);
             model.addAttribute("searchTitle", title);
         } else {
-            books = bookService.findAll();
+            books = bookService.findAllWithAuthors();
         }
         model.addAttribute("books", books);
         model.addAttribute("loggedInUser", loggedInUser);
         return "books/list";
+    }
+
+    @GetMapping("/{id}/manage-authors")
+    @Transactional(readOnly = true)
+    public String manageAuthors(@PathVariable Long id, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+        if (loggedInUser == null || !loggedInUser.isAdmin()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Access denied. Admin privileges required.");
+            return "redirect:/books";
+        }
+
+        Optional<Book> bookOpt = bookService.findByIdWithAuthors(id);
+        if (bookOpt.isPresent()) {
+            Book book = bookOpt.get();
+            List<Author> allAuthors = authorService.findAll();
+            List<Long> bookAuthorIds = book.getAuthors().stream()
+                                           .map(Author::getId)
+                                           .collect(Collectors.toList());
+            model.addAttribute("book", book);
+            model.addAttribute("allAuthors", allAuthors);
+            model.addAttribute("bookAuthorIds", bookAuthorIds);
+            return "books/manage-authors";
+        }
+        return "redirect:/books";
+    }
+
+    @PostMapping("/{id}/manage-authors")
+    public String saveBookAuthors(@PathVariable Long id, 
+                                 @RequestParam(value = "selectedAuthorIds", required = false) List<Long> selectedAuthorIds,
+                                 HttpSession session, 
+                                 RedirectAttributes redirectAttributes) {
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+        if (loggedInUser == null || !loggedInUser.isAdmin()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Access denied. Admin privileges required.");
+            return "redirect:/books";
+        }
+
+        try {
+            Optional<Book> bookOpt = bookService.findById(id);
+            if (!bookOpt.isPresent()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Book not found.");
+                return "redirect:/books";
+            }
+
+            // If no authors selected, pass empty list
+            if (selectedAuthorIds == null) {
+                selectedAuthorIds = new ArrayList<>();
+            }
+
+            // Use the BookService to set authors for the book
+            Book updatedBook = bookService.setAuthors(id, selectedAuthorIds);
+            if (updatedBook != null) {
+                redirectAttributes.addFlashAttribute("successMessage", "Authors updated successfully!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Failed to update authors.");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error updating authors: " + e.getMessage());
+        }
+
+        return "redirect:/books/" + id;
     }
 }

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: layout(~{::title}, ~{::main})}">
+<head>
+    <title>Manage Authors for Book - SiW Books</title>
+</head>
+<body>
+    <main>
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">Manage Authors for <span th:text="${book.title}">Book Title</span></h1>
+                <p class="mt-2 text-gray-600">Select or deselect authors to associate with this book.</p>
+            </div>
+
+            <!-- Form for Managing Authors -->
+            <div class="bg-white shadow rounded-lg p-8">
+                <form th:action="@{/books/{id}/manage-authors(id=${book.id})}" method="post">
+                    <div class="space-y-6">
+                        <div th:if="${allAuthors.empty}" class="text-center py-6">
+                            <p class="text-gray-500">There are no authors in the system to manage.</p>
+                             <a href="/authors/new" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                                Add New Author
+                            </a>
+                        </div>
+
+                        <div th:unless="${allAuthors.empty}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div th:each="author : ${allAuthors}" class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition duration-200">
+                                <div class="flex items-start space-x-3">
+                                    <input type="checkbox"
+                                           name="selectedAuthorIds"
+                                           th:value="${author.id}"
+                                           th:checked="${#lists.contains(bookAuthorIds, author.id)}"
+                                           class="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                    <div class="flex-1">
+                                        <label th:for="${'author-' + author.id}" class="font-semibold text-gray-900" th:text="${author.name + ' ' + author.surname}">Author Name</label>
+                                        <p class="text-sm text-gray-600" th:if="${author.nationality}" th:text="${author.nationality}">Nationality</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200 mt-8">
+                            <a th:href="@{/books/{id}(id=${book.id})}"
+                               class="border border-gray-300 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-50 transition duration-150">
+                                Cancel
+                            </a>
+                            <button type="submit"
+                                    class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition duration-150">
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

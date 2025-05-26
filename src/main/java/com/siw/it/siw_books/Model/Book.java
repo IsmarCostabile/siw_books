@@ -1,6 +1,7 @@
 package com.siw.it.siw_books.Model;
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -16,6 +17,9 @@ public class Book {
 
     @Column(name = "publication_year")
     private Integer publicationYear;
+
+    @Column(columnDefinition = "TEXT")
+    private String synopsis;
 
     @ElementCollection
     @CollectionTable(name = "book_images", joinColumns = @JoinColumn(name = "book_id"))
@@ -35,10 +39,14 @@ public class Book {
     private List<Review> reviews;
 
     // Default constructor
-    public Book() {}
+    public Book() {
+        this.authors = new ArrayList<>();
+        this.reviews = new ArrayList<>();
+    }
 
     // Constructor
     public Book(String title, Integer publicationYear) {
+        this();
         this.title = title;
         this.publicationYear = publicationYear;
     }
@@ -68,6 +76,14 @@ public class Book {
         this.publicationYear = publicationYear;
     }
 
+    public String getSynopsis() {
+        return synopsis;
+    }
+
+    public void setSynopsis(String synopsis) {
+        this.synopsis = synopsis;
+    }
+
     public List<byte[]> getImages() {
         return images;
     }
@@ -90,5 +106,22 @@ public class Book {
 
     public void setReviews(List<Review> reviews) {
         this.reviews = reviews;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        Book book = (Book) obj;
+        return id != null && id.equals(book.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
     }
 }

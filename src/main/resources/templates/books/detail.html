@@ -33,24 +33,24 @@
                 </ol>
             </nav>
 
-            <div class="bg-white shadow rounded-lg overflow-hidden">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 p-8">
-                    <!-- Book Image -->
-                    <div class="lg:col-span-1">
-                        <div class="aspect-w-3 aspect-h-4 bg-gray-200 rounded-lg overflow-hidden">
-                            <div th:if="${book.images != null and not #lists.isEmpty(book.images)}">
-                                <img th:src="@{'/images/books/' + ${book.id} + '/0'}" th:alt="${book.title}" class="w-full h-full object-cover">
-                            </div>
-                            <div th:unless="${book.images != null and not #lists.isEmpty(book.images)}" class="flex items-center justify-center h-96 bg-gradient-to-br from-blue-400 to-purple-500">
-                                <div class="text-white text-center">
-                                    <svg class="h-20 w-20 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    <p class="text-lg">No Image Available</p>
+                        <div class="bg-white shadow rounded-lg overflow-hidden">
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 p-8">
+                                <!-- Book Image -->
+                                <div class="lg:col-span-1">
+                                    <div class="aspect-w-1 aspect-h-1 bg-gray-200 rounded-lg overflow-hidden">
+                                        <div th:if="${hasImages}">
+                                            <img th:src="@{'/images/books/' + ${book.id} + '/0'}" th:alt="${book.title}" class="w-full h-full object-cover">
+                                        </div>
+                                        <div th:unless="${hasImages}" class="flex items-center justify-center h-16 bg-gradient-to-br from-blue-400 to-purple-500">
+                                            <div class="text-white text-center">
+                                                <svg class="h-20 w-20 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                                <p class="text-lg">No Image Available</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Book Details -->
                     <div class="lg:col-span-2">
@@ -62,23 +62,20 @@
                             </p>
                         </div>
 
-                        <!-- Authors -->
-                        <div th:if="${book.authors != null and not #lists.isEmpty(book.authors)}" class="mb-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Authors</h3>
-                            <div class="flex flex-wrap gap-2">
-                                <span th:each="author : ${book.authors}" 
-                                      class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
-                                    <span th:text="${author.name + ' ' + author.surname}">Author Name</span>
-                                </span>
+                        <!-- Synopsis -->
+                        <div th:if="${book.synopsis != null and not #strings.isEmpty(book.synopsis)}" class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Synopsis</h3>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-gray-700 leading-relaxed" th:text="${book.synopsis}">Book synopsis will be displayed here...</p>
                             </div>
                         </div>
 
                         <!-- Additional Images -->
-                        <div th:if="${book.images != null and book.images.size() > 1}" class="mb-6">
+                        <div th:if="${imageCount > 1}" class="mb-6">
                             <h3 class="text-lg font-semibold text-gray-900 mb-3">Gallery</h3>
                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                <div th:each="image, iterStat : ${book.images}" th:if="${iterStat.index > 0}" class="aspect-w-1 aspect-h-1">
-                                    <img th:src="@{'/images/books/' + ${book.id} + '/' + ${iterStat.index}}" th:alt="${book.title + ' - Image ' + (iterStat.index + 1)}" 
+                                <div th:each="i : ${#numbers.sequence(1, imageCount - 1)}" class="aspect-w-1 aspect-h-1">
+                                    <img th:src="@{'/images/books/' + ${book.id} + '/' + ${i}}" th:alt="${book.title + ' - Image ' + (i + 1)}" 
                                          class="w-full h-32 object-cover rounded-lg">
                                 </div>
                             </div>
@@ -95,9 +92,122 @@
                                class="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 transition duration-150">
                                 Delete Book
                             </a>
-                            <a href="/books" 
-                               class="border border-gray-300 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-50 transition duration-150">
-                                Back to Books
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Authors Section -->
+            <div class="mt-12">
+                <div class="bg-white shadow rounded-lg p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">Authors</h2>
+                            <p class="text-sm text-gray-600 mt-1" th:if="${book.authors != null and book.authors.size() > 0}">
+                                <span th:text="${#lists.size(book.authors)}">0</span> author<span th:if="${#lists.size(book.authors) > 1}">s</span>
+                            </p>
+                        </div>
+                        <div th:if="${loggedInUser != null and loggedInUser.admin}" class="flex space-x-2">
+                            <a href="/authors/new" class="bg-green-600 text-white px-3 py-1 rounded-md text-sm font-medium hover:bg-green-700 transition duration-150">
+                                Add New Author
+                            </a>
+                            <a th:href="@{/books/{id}/manage-authors(id=${book.id})}" class="bg-purple-600 text-white px-3 py-1 rounded-md text-sm font-medium hover:bg-purple-700 transition duration-150">
+                                Manage Authors
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div th:if="${book.authors != null and book.authors.size() > 0}">
+                        <!-- Single Author Layout for 1 author -->
+                        <div th:if="${book.authors.size() == 1}" class="max-w-8xl">
+                            <div th:each="author : ${book.authors}" class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition duration-200">
+                                <div class="flex items-start space-x-4">
+                                    <div class="w-20 h-24 bg-gradient-to-br from-blue-400 to-purple-500 rounded-md flex items-center justify-center flex-shrink-0">
+                                        <div th:if="${author.photo != null}" class="w-full h-full">
+                                            <img th:src="@{'/images/authors/' + ${author.id}}" 
+                                                 th:alt="${author.name + ' ' + author.surname}"
+                                                 class="w-full h-full object-cover rounded-md">
+                                        </div>
+                                        <div th:unless="${author.photo != null}" class="flex items-center justify-center">
+                                            <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-xl font-semibold text-gray-900 mb-2" th:text="${author.name + ' ' + author.surname}">Author Name</h3>
+                                        <p class="text-sm text-gray-600 mb-3" th:if="${author.nationality}" th:text="${author.nationality}">Nationality</p>
+                                        <div class="text-sm text-gray-500 mb-3">
+                                            <span th:if="${author.birthDate}" th:text="'Born: ' + ${#temporals.format(author.birthDate, 'yyyy')}">Birth Year</span>
+                                            <span th:if="${author.deathDate}" th:text="' - ' + ${#temporals.format(author.deathDate, 'yyyy')}">Death Year</span>
+                                        </div>
+                                        <div th:if="${author.description != null and not #strings.isEmpty(author.description)}" class="mb-4">
+                                            <p class="text-sm text-gray-700 leading-relaxed" th:text="${#strings.abbreviate(author.description, 200)}">Author bio...</p>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <a th:href="@{/authors/{id}(id=${author.id})}" 
+                                               class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                                View Full Profile
+                                            </a>
+                                            <a th:if="${loggedInUser != null and loggedInUser.admin}" th:href="@{/authors/{id}/edit(id=${author.id})}" 
+                                               class="text-gray-600 hover:text-gray-800 text-sm">
+                                                Edit Author
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Grid Layout for Multiple Authors -->
+                        <div th:if="${book.authors.size() > 1}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div th:each="author : ${book.authors}" class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition duration-200">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-16 h-20 bg-gradient-to-br from-blue-400 to-purple-500 rounded-md flex items-center justify-center flex-shrink-0">
+                                        <div th:if="${author.photo != null}" class="w-full h-full">
+                                            <img th:src="@{'/images/authors/' + ${author.id}}" 
+                                                 th:alt="${author.name + ' ' + author.surname}"
+                                                 class="w-full h-full object-cover rounded-md">
+                                        </div>
+                                        <div th:unless="${author.photo != null}" class="flex items-center justify-center">
+                                            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="text-lg font-semibold text-gray-900 mb-1" th:text="${author.name + ' ' + author.surname}">Author Name</h4>
+                                        <p class="text-xs text-gray-600 mb-2" th:if="${author.nationality}" th:text="${author.nationality}">Nationality</p>
+                                        <div class="text-xs text-gray-500 mb-2">
+                                            <span th:if="${author.birthDate}" th:text="'Born: ' + ${#temporals.format(author.birthDate, 'yyyy')}">Birth Year</span>
+                                            <span th:if="${author.deathDate}" th:text="' - ' + ${#temporals.format(author.deathDate, 'yyyy')}">Death Year</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <a th:href="@{/authors/{id}(id=${author.id})}" 
+                                               class="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                                                View Profile
+                                            </a>
+                                            <a th:if="${loggedInUser != null and loggedInUser.admin}" th:href="@{/authors/{id}/edit(id=${author.id})}" 
+                                               class="text-gray-600 hover:text-gray-800 text-xs">
+                                                Edit
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div th:if="${book.authors == null or book.authors.size() == 0}" class="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No Authors Assigned</h3>
+                        <p class="mt-1 text-sm text-gray-500">This book doesn't have any authors assigned yet.</p>
+                        <div th:if="${loggedInUser != null and loggedInUser.admin}" class="mt-4">
+                            <a th:href="@{/books/{id}/associate-authors(id=${book.id})}" 
+                               class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition duration-150">
+                                Associate Authors
                             </a>
                         </div>
                     </div>
