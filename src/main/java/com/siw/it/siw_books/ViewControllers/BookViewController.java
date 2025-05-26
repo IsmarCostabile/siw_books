@@ -2,9 +2,11 @@ package com.siw.it.siw_books.ViewControllers;
 
 import com.siw.it.siw_books.Model.Author;
 import com.siw.it.siw_books.Model.Book;
+import com.siw.it.siw_books.Model.Review;
 import com.siw.it.siw_books.Model.User;
 import com.siw.it.siw_books.Service.AuthorService;
 import com.siw.it.siw_books.Service.BookService;
+import com.siw.it.siw_books.Service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,12 +32,28 @@ public class BookViewController {
     @Autowired
     private AuthorService authorService;
 
+    @Autowired
+    private ReviewService reviewService;
+
     @GetMapping
     @Transactional(readOnly = true)
     public String getAllBooks(Model model, HttpSession session) {
         List<Book> books = bookService.findAllWithAuthors();
         User loggedInUser = (User) session.getAttribute("loggedInUser");
+        
+        // Calculate average ratings for each book
+        List<Double> averageRatings = new ArrayList<>();
+        List<Long> reviewCounts = new ArrayList<>();
+        for (Book book : books) {
+            Double avgRating = reviewService.findAverageRatingByBookId(book.getId());
+            Long reviewCount = reviewService.countReviewsByBookId(book.getId());
+            averageRatings.add(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0);
+            reviewCounts.add(reviewCount != null ? reviewCount : 0);
+        }
+        
         model.addAttribute("books", books);
+        model.addAttribute("averageRatings", averageRatings);
+        model.addAttribute("reviewCounts", reviewCounts);
         model.addAttribute("loggedInUser", loggedInUser);
         return "books/list";
     }
@@ -48,10 +66,32 @@ public class BookViewController {
             User loggedInUser = (User) session.getAttribute("loggedInUser");
             boolean hasImages = bookService.hasImages(id);
             long imageCount = bookService.countImages(id);
+            
+            // Load reviews for this book
+            List<Review> reviews = reviewService.findByBookIdOrderByRatingDesc(id);
+            
+            // Check if logged-in user has already reviewed this book
+            Review userReview = null;
+            if (loggedInUser != null) {
+                Optional<Review> userReviewOpt = reviewService.findByUserIdAndBookId(loggedInUser.getId(), id);
+                if (userReviewOpt.isPresent()) {
+                    userReview = userReviewOpt.get();
+                }
+            }
+            
+            // Calculate review statistics
+            Double averageRating = reviewService.findAverageRatingByBookId(id);
+            Long reviewCount = reviewService.countReviewsByBookId(id);
+            
             model.addAttribute("book", book.get());
             model.addAttribute("hasImages", hasImages);
             model.addAttribute("imageCount", imageCount);
             model.addAttribute("loggedInUser", loggedInUser);
+            model.addAttribute("reviews", reviews);
+            model.addAttribute("userReview", userReview);
+            model.addAttribute("averageRating", averageRating != null ? Math.round(averageRating * 10.0) / 10.0 : 0.0);
+            model.addAttribute("reviewCount", reviewCount != null ? reviewCount : 0);
+            
             return "books/detail";
         }
         return "redirect:/books";
@@ -154,7 +194,20 @@ public class BookViewController {
         } else {
             books = bookService.findAllWithAuthors();
         }
+        
+        // Calculate average ratings for each book
+        List<Double> averageRatings = new ArrayList<>();
+        List<Long> reviewCounts = new ArrayList<>();
+        for (Book book : books) {
+            Double avgRating = reviewService.findAverageRatingByBookId(book.getId());
+            Long reviewCount = reviewService.countReviewsByBookId(book.getId());
+            averageRatings.add(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0);
+            reviewCounts.add(reviewCount != null ? reviewCount : 0);
+        }
+        
         model.addAttribute("books", books);
+        model.addAttribute("averageRatings", averageRatings);
+        model.addAttribute("reviewCounts", reviewCounts);
         model.addAttribute("loggedInUser", loggedInUser);
         return "books/list";
     }

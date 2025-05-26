@@ -93,22 +93,37 @@
                                         <div th:if="${book.synopsis != null and not #strings.isEmpty(book.synopsis)}" class="mb-3">
                                             <p class="text-sm text-gray-700 leading-relaxed" th:text="${#strings.abbreviate(book.synopsis, 200)}">Synopsis preview...</p>
                                         </div>
-                                        
-                                        <!-- Book Stats -->
-                                        <div class="flex items-center space-x-4 text-xs text-gray-500">
-                                            <span th:if="${book.authors != null and not #lists.isEmpty(book.authors)}">
-                                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                                </svg>
-                                                <span th:text="${#lists.size(book.authors)} + ' author' + (${#lists.size(book.authors)} > 1 ? 's' : '')">Authors count</span>
-                                            </span>
-                                            <span th:if="${book.reviews != null and not #lists.isEmpty(book.reviews)}">
-                                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                                                </svg>
-                                                <span th:text="${#lists.size(book.reviews)} + ' review' + (${#lists.size(book.reviews)} > 1 ? 's' : '')">Reviews count</span>
-                                            </span>
-                                        </div>
+                                                         <!-- Book Stats -->
+                        <div class="flex items-center space-x-4 text-xs text-gray-500 mb-2">
+                            <span th:if="${book.authors != null and not #lists.isEmpty(book.authors)}">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                <span th:text="${#lists.size(book.authors)} + ' author' + (${#lists.size(book.authors)} > 1 ? 's' : '')">Authors count</span>
+                            </span>
+                            <span th:if="${book.reviews != null and not #lists.isEmpty(book.reviews)}">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                </svg>
+                                <span th:text="${#lists.size(book.reviews)} + ' review' + (${#lists.size(book.reviews)} > 1 ? 's' : '')">Reviews count</span>
+                            </span>
+                        </div>
+
+                        <!-- Star Rating -->
+                        <div th:if="${averageRatings != null and reviewCounts != null}" class="flex items-center">
+                            <div class="flex items-center" th:with="avgRating=${averageRatings[__${bookStat.index}__]}, reviewCount=${reviewCounts[__${bookStat.index}__]}">
+                                <div class="flex mr-2" th:if="${reviewCount > 0}">
+                                    <i th:each="i : ${#numbers.sequence(1, 5)}" 
+                                       th:class="${i <= avgRating} ? 'fas fa-star text-yellow-400' : 'fas fa-star text-gray-300'"
+                                       class="text-sm"></i>
+                                </div>
+                                <span class="text-sm text-gray-600" th:if="${reviewCount > 0}">
+                                    <span th:text="${avgRating}">4.5</span> 
+                                    (<span th:text="${reviewCount} + ' review' + (${reviewCount} > 1 ? 's' : '')">4 reviews</span>)
+                                </span>
+                                <span class="text-sm text-gray-400" th:if="${reviewCount == 0}">No reviews yet</span>
+                            </div>
+                        </div>
                                     </div>
                                     
                                     <!-- Action Buttons -->

@@ -5,6 +5,7 @@ import com.siw.it.siw_books.Model.Book;
 import com.siw.it.siw_books.Model.User;
 import com.siw.it.siw_books.Service.AuthorService;
 import com.siw.it.siw_books.Service.BookService;
+import com.siw.it.siw_books.Service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,9 @@ public class AuthorViewController {
     @Autowired
     private BookService bookService;
 
+    @Autowired
+    private ReviewService reviewService;
+
     @GetMapping
     public String getAllAuthors(Model model, HttpSession session) {
         List<Author> authors = authorService.findAll();
@@ -45,7 +49,23 @@ public class AuthorViewController {
         Optional<Author> author = authorService.findById(id);
         if (author.isPresent()) {
             User loggedInUser = (User) session.getAttribute("loggedInUser");
+            
+            // Calculate average ratings and review counts for each book
+            List<Double> averageRatings = new ArrayList<>();
+            List<Long> reviewCounts = new ArrayList<>();
+            
+            if (author.get().getBooks() != null) {
+                for (Book book : author.get().getBooks()) {
+                    Double avgRating = reviewService.findAverageRatingByBookId(book.getId());
+                    Long reviewCount = reviewService.countReviewsByBookId(book.getId());
+                    averageRatings.add(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0.0);
+                    reviewCounts.add(reviewCount != null ? reviewCount : 0);
+                }
+            }
+            
             model.addAttribute("author", author.get());
+            model.addAttribute("averageRatings", averageRatings);
+            model.addAttribute("reviewCounts", reviewCounts);
             model.addAttribute("loggedInUser", loggedInUser);
             return "authors/detail";
         }

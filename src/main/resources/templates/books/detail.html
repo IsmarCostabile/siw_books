@@ -214,18 +214,73 @@
                 </div>
             </div>
 
-            <!-- Reviews Section (Placeholder) -->
+            <!-- Reviews Section -->
             <div class="mt-12">
                 <div class="bg-white shadow rounded-lg p-8">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Reviews</h2>
-                    <div class="text-center py-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">Reviews</h2>
+                            <div th:if="${reviewCount > 0}" class="flex items-center mt-2">
+                                <div class="flex items-center">
+                                    <span class="text-2xl font-bold text-yellow-400" th:text="${averageRating}">4.5</span>
+                                    <div class="flex ml-2">
+                                        <i th:each="i : ${#numbers.sequence(1, 5)}" 
+                                           th:class="${i <= averageRating} ? 'fas fa-star text-yellow-400' : 'fas fa-star text-gray-300'"
+                                           class="text-lg"></i>
+                                    </div>
+                                    <span class="ml-2 text-sm text-gray-600" th:text="${reviewCount} + ' review' + (${reviewCount} > 1 ? 's' : '')">4 reviews</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Reviews List -->
+                    <div th:if="${reviews != null and reviews.size() > 0}">
+                        <div class="space-y-6">
+                            <div th:each="review : ${reviews}" class="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="flex items-center">
+                                                <h4 class="text-lg font-semibold text-gray-900" th:text="${review.title}">Review Title</h4>
+                                                <div class="flex ml-3">
+                                                    <i th:each="i : ${#numbers.sequence(1, 5)}" 
+                                                       th:class="${i <= review.rating} ? 'fas fa-star text-yellow-400' : 'fas fa-star text-gray-300'"
+                                                       class="text-sm"></i>
+                                                </div>
+                                            </div>
+                                            <div th:if="${loggedInUser != null and (loggedInUser.admin or loggedInUser.id == review.user.id)}" class="flex space-x-2">
+                                                <a th:if="${loggedInUser.id == review.user.id}" 
+                                                   th:href="@{/reviews/{id}/edit(id=${review.id})}" 
+                                                   class="text-blue-600 hover:text-blue-800 text-sm">Edit</a>
+                                                <a th:href="@{/reviews/{id}/delete(id=${review.id})}" 
+                                                   onclick="return confirm('Are you sure you want to delete this review?')"
+                                                   class="text-red-600 hover:text-red-800 text-sm">Delete</a>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <span class="text-sm text-gray-600">
+                                                by <span class="font-medium" th:text="${review.user.firstName + ' ' + review.user.lastName}">John Doe</span>
+                                            </span>
+                                        </div>
+                                        <div th:if="${review.text != null and not #strings.isEmpty(review.text)}" class="text-gray-700">
+                                            <p th:text="${review.text}">Review text goes here...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- No Reviews State -->
+                    <div th:if="${reviews == null or reviews.size() == 0}" class="text-center py-8">
                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                         </svg>
                         <h3 class="mt-2 text-sm font-medium text-gray-900">No reviews yet</h3>
                         <p class="mt-1 text-sm text-gray-500">Be the first to review this book!</p>
                         <div class="mt-6">
-                            <a th:if="${loggedInUser != null and loggedInUser.registeredUser}" 
+                            <a th:if="${loggedInUser != null and loggedInUser.registeredUser and userReview == null}" 
                                th:href="@{/reviews/new(bookId=${book.id})}" 
                                class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition duration-150">
                                 Write a Review
