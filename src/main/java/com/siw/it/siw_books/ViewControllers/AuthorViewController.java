@@ -125,6 +125,7 @@ public class AuthorViewController {
     }
 
     @GetMapping("/search")
+    @Transactional(readOnly = true)
     public String searchAuthors(@RequestParam(required = false) String name, Model model, HttpSession session) {
         List<Author> authors;
         User loggedInUser = (User) session.getAttribute("loggedInUser");

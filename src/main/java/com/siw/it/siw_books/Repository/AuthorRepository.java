@@ -13,8 +13,10 @@ import java.util.Optional;
 @Repository
 public interface AuthorRepository extends JpaRepository<Author, Long> {
     
-    List<Author> findByNameContainingIgnoreCaseOrSurnameContainingIgnoreCase(String name, String surname);
+    List<Author> findByNameContainingIgnoreCase(String name);
     
+    List<Author> findBySurnameContainingIgnoreCase(String name);
+
     List<Author> findByNationality(String nationality);
     
     @Query("SELECT a FROM Author a WHERE a.birthDate BETWEEN :startDate AND :endDate")

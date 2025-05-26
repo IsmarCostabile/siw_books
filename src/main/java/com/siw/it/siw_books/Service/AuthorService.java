@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,7 +41,12 @@ public class AuthorService {
     }
 
     public List<Author> findByNameContaining(String name) {
-        return authorRepository.findByNameContainingIgnoreCaseOrSurnameContainingIgnoreCase(name, name);
+        List<Author> authorsWithName = new ArrayList<>();
+        if (name != null && !name.isEmpty()) {
+            authorsWithName.addAll(authorRepository.findByNameContainingIgnoreCase(name));
+            authorsWithName.addAll(authorRepository.findBySurnameContainingIgnoreCase(name));
+        }
+        return authorsWithName;
     }
 
     public List<Author> findByNationality(String nationality) {
