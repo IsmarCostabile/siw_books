@@ -65,7 +65,7 @@ public class AuthController {
         if (credentialsService.existsByUsername(credentials.getUsername())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
-        Credentials savedCredentials = credentialsService.save(credentials);
+        Credentials savedCredentials = credentialsService.saveWithEncodedPassword(credentials);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedCredentials);
     }
 
@@ -73,7 +73,7 @@ public class AuthController {
     public ResponseEntity<Credentials> login(@RequestBody LoginRequest loginRequest) {
         Optional<Credentials> credentials = credentialsService.findByUsername(loginRequest.getUsername());
         
-        if (credentials.isPresent() && credentials.get().getPassword().equals(loginRequest.getPassword())) {
+        if (credentials.isPresent() && credentialsService.verifyPassword(loginRequest.getPassword(), credentials.get().getPassword())) {
             return ResponseEntity.ok(credentials.get());
         }
         
@@ -101,12 +101,11 @@ public class AuthController {
         }
         
         Credentials credentials = credentialsOpt.get();
-        if (!credentials.getPassword().equals(passwordChangeRequest.getCurrentPassword())) {
+        if (!credentialsService.verifyPassword(passwordChangeRequest.getCurrentPassword(), credentials.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
-        credentials.setPassword(passwordChangeRequest.getNewPassword());
-        Credentials updatedCredentials = credentialsService.save(credentials);
+        Credentials updatedCredentials = credentialsService.updatePassword(id, passwordChangeRequest.getNewPassword());
         return ResponseEntity.ok(updatedCredentials);
     }
 

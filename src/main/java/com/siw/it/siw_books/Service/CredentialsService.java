@@ -3,6 +3,7 @@ package com.siw.it.siw_books.Service;
 import com.siw.it.siw_books.Model.Credentials;
 import com.siw.it.siw_books.Repository.CredentialsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,9 @@ public class CredentialsService {
 
     @Autowired
     private CredentialsRepository credentialsRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public List<Credentials> findAll() {
         return credentialsRepository.findAll();
@@ -49,5 +53,25 @@ public class CredentialsService {
 
     public Optional<Credentials> findByUserId(Long userId) {
         return credentialsRepository.findByUserId(userId);
+    }
+
+    public Credentials saveWithEncodedPassword(Credentials credentials) {
+        // Encode the password before saving
+        credentials.setPassword(passwordEncoder.encode(credentials.getPassword()));
+        return credentialsRepository.save(credentials);
+    }
+
+    public boolean verifyPassword(String rawPassword, String encodedPassword) {
+        return passwordEncoder.matches(rawPassword, encodedPassword);
+    }
+
+    public Credentials updatePassword(Long credentialsId, String newPassword) {
+        Optional<Credentials> credentialsOpt = findById(credentialsId);
+        if (credentialsOpt.isPresent()) {
+            Credentials credentials = credentialsOpt.get();
+            credentials.setPassword(passwordEncoder.encode(newPassword));
+            return save(credentials);
+        }
+        throw new RuntimeException("Credentials not found with id: " + credentialsId);
     }
 }

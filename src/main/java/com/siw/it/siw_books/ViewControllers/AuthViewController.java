@@ -39,8 +39,8 @@ public class AuthViewController {
             if (credentialsOpt.isPresent()) {
                 Credentials credentials = credentialsOpt.get();
                 
-                // Simple password check (in production, use password hashing)
-                if (credentials.getPassword().equals(password)) {
+                // Use password encoder to verify password
+                if (credentialsService.verifyPassword(password, credentials.getPassword())) {
                     // Login successful - store user in session
                     session.setAttribute("loggedInUser", credentials.getUser());
                     session.setAttribute("loggedInCredentials", credentials);
@@ -94,10 +94,10 @@ public class AuthViewController {
             User newUser = new User(email, firstName, lastName, UserRole.USER);
             User savedUser = userService.save(newUser);
 
-            // Create credentials
-            Credentials newCredentials = new Credentials(username, password); // In production, hash the password
+            // Create credentials with encrypted password
+            Credentials newCredentials = new Credentials(username, password);
             newCredentials.setUser(savedUser);
-            credentialsService.save(newCredentials);
+            credentialsService.saveWithEncodedPassword(newCredentials);
 
             redirectAttributes.addFlashAttribute("successMessage", "Registration successful! You can now log in.");
             return "redirect:/login";
