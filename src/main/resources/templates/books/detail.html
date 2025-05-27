@@ -232,6 +232,12 @@
                                 </div>
                             </div>
                         </div>
+                        <div th:if="${reviews != null and reviews.size() > 0 and loggedInUser != null and loggedInUser.registeredUser and userReview == null}">
+                            <a th:href="@{/reviews/new(bookId=${book.id})}" 
+                               class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition duration-150">
+                                Write a Review
+                            </a>
+                        </div>
                     </div>
                     
                     <!-- Reviews List -->
