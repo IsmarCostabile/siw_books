@@ -31,8 +31,7 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     
     List<Book> findByPublicationYear(Integer year);
     
-    @Query("SELECT b FROM Book b WHERE b.publicationYear BETWEEN :startYear AND :endYear")
-    List<Book> findByPublicationYearBetween(@Param("startYear") Integer startYear, @Param("endYear") Integer endYear);
+    List<Book> findByPublicationYearBetween(Integer startYear, Integer endYear);
     
     @Query("SELECT b FROM Book b LEFT JOIN FETCH b.authors WHERE b.id = :id")
     Optional<Book> findByIdWithAuthors(@Param("id") Long id);

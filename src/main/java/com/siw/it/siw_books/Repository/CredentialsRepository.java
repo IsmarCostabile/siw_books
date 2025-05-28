@@ -20,8 +20,7 @@ public interface CredentialsRepository extends JpaRepository<Credentials, Long> 
     @Query("SELECT c FROM Credentials c JOIN FETCH c.user WHERE c.username = :username")
     Optional<Credentials> findByUsernameWithUser(@Param("username") String username);
     
-    @Query("SELECT c FROM Credentials c WHERE c.lastPasswordChange < :dateTime")
-    List<Credentials> findByLastPasswordChangeBefore(@Param("dateTime") LocalDateTime dateTime);
+    List<Credentials> findByLastPasswordChangeBefore(LocalDateTime dateTime);
     
     Optional<Credentials> findByUserId(Long userId);
 }

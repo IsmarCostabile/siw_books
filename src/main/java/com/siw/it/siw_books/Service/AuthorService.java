@@ -58,7 +58,7 @@ public class AuthorService {
     }
 
     public List<Author> findLivingAuthors() {
-        return authorRepository.findLivingAuthors();
+        return authorRepository.findByDeathDateIsNull();
     }
 
     @Transactional(readOnly = true)

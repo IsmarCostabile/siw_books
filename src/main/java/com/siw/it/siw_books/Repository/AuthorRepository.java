@@ -19,11 +19,9 @@ public interface AuthorRepository extends JpaRepository<Author, Long> {
 
     List<Author> findByNationality(String nationality);
     
-    @Query("SELECT a FROM Author a WHERE a.birthDate BETWEEN :startDate AND :endDate")
-    List<Author> findByBirthDateBetween(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    List<Author> findByBirthDateBetween(LocalDate startDate, LocalDate endDate);
     
-    @Query("SELECT a FROM Author a WHERE a.deathDate IS NULL")
-    List<Author> findLivingAuthors();
+    List<Author> findByDeathDateIsNull();
     
     @Query("SELECT a FROM Author a LEFT JOIN FETCH a.books WHERE a.id = :id")
     Optional<Author> findByIdWithBooks(@Param("id") Long id);

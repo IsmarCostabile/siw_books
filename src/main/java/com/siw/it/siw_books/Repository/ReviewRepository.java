@@ -22,8 +22,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     
     List<Review> findByRating(Integer rating);
     
-    @Query("SELECT r FROM Review r WHERE r.book.id = :bookId ORDER BY r.rating DESC")
-    List<Review> findByBookIdOrderByRatingDesc(@Param("bookId") Long bookId);
+    List<Review> findByBookIdOrderByRatingDesc(Long bookId);
     
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.book.id = :bookId")
     Double findAverageRatingByBookId(@Param("bookId") Long bookId);
@@ -31,6 +30,5 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Query("SELECT COUNT(r) FROM Review r WHERE r.book.id = :bookId")
     Long countReviewsByBookId(@Param("bookId") Long bookId);
     
-    @Query("SELECT r FROM Review r WHERE r.title LIKE %:title%")
-    List<Review> findByTitleContaining(@Param("title") String title);
+    List<Review> findByTitleContaining(String title);
 }
