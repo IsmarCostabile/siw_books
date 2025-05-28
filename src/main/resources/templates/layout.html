@@ -54,6 +54,7 @@
                             <span class="text-sm text-gray-700">
                                 Welcome, <span class="font-medium" th:text="${session.loggedInUser.firstName}">User</span>!
                             </span>
+                            <a href="/profile" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition duration-150">Profile</a>
                             <a href="/logout" class="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition duration-150">Logout</a>
                         </div>
                         <!-- Guest user menu -->
@@ -88,6 +89,7 @@
                         <p class="text-sm text-gray-600 px-3 mb-2">
                             Welcome, <span class="font-medium" th:text="${session.loggedInUser.firstName}">User</span>!
                         </p>
+                        <a href="/profile" class="block bg-blue-600 text-white px-3 py-2 rounded-md text-base font-medium mb-2">Profile</a>
                         <a href="/logout" class="block bg-red-600 text-white px-3 py-2 rounded-md text-base font-medium">Logout</a>
                     </div>
                     <!-- Guest user mobile menu -->
@@ -124,5 +126,13 @@
             </div>
         </div>
     </footer>
+    
+    <!-- Mobile menu toggle script -->
+    <script>
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+    </script>
 </body>
 </html>

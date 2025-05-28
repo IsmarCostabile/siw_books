@@ -36,7 +36,7 @@ public class CredentialsService {
     public List<Credentials> findAll() {
         return credentialsRepository.findAll();
     }
-
+    
     public Optional<Credentials> findById(Long id) {
         return credentialsRepository.findById(id);
     }
@@ -180,5 +180,21 @@ public class CredentialsService {
 
     public void cleanupExpiredTokens() {
         passwordResetTokenRepository.deleteExpiredTokens(LocalDateTime.now());
+    }
+
+    
+     // Find a user by username using the credentials relationship
+     public Optional<User> findUserByUsername(String username) {
+        Optional<Credentials> credentials = findByUsernameWithUser(username);
+        return credentials.map(Credentials::getUser);
+    }
+
+    // Find a user by username and include their reviews
+    public Optional<User> findUserByUsernameWithReviews(String username) {
+        Optional<User> user = findUserByUsername(username);
+        if (user.isPresent()) {
+            return userService.findByIdWithReviews(user.get().getId());
+        }
+        return Optional.empty();
     }
 }

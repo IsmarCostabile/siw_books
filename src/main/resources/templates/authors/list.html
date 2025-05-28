@@ -70,7 +70,7 @@
                         <div class="flex-1 p-6">
                             <div class="flex justify-between items-start">
                                 <div class="flex-1">
-                                    <h3 class="text-xl font-semibold text-gray-900 mb-2" th:text="${author.name + ' ' + author.surname}">Author Name</h3>
+                                    <a th:href="@{/authors/{authorId}(authorId=${author.id})}"><h3 class="text-xl font-semibold text-gray-900 mb-2" th:text="${author.name + ' ' + author.surname}">Author Name</h3></a>
                                     <p class="text-sm text-gray-600 mb-3" th:text="${author.nationality}">Nationality</p>
                                     
                                     <div class="space-y-1 text-sm text-gray-600 mb-3">
